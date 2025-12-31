@@ -108,7 +108,7 @@
   --border-color: #374151;
 }
 
-/* 基础重置 */
+/* 基础重置 - 移除所有下划线和列表符号 */
 * {
   margin: 0;
   padding: 0;
@@ -129,6 +129,17 @@ body {
   transition: background-color var(--transition-normal), color var(--transition-normal);
   overflow-x: hidden;
   position: relative;
+}
+
+/* 移除所有链接的下划线 */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 移除所有列表的符号 */
+ul, ol {
+  list-style: none;
 }
 
 /* 颜色切换动效 */
@@ -265,7 +276,6 @@ body {
   height: 3px;
   background-color: white;
   border-radius: 3px;
-  animation: none;
 }
 
 /* 导航动效 */
@@ -396,42 +406,78 @@ body {
   will-change: background;
 }
 
+/* 重新设计RGB选择器布局 */
 .rgb-controls {
   margin-bottom: 15px;
 }
 
 .rgb-input-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .rgb-input {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+}
+
+.rgb-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .rgb-input label {
   font-size: 12px;
   color: var(--gray-600);
+  min-width: 30px;
 }
 
-.rgb-input input {
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--card-bg);
-  color: var(--text-color);
-  transition: all var(--transition-fast);
-  will-change: border-color;
+.rgb-slider-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.rgb-input input:focus {
+.rgb-input input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  background: var(--gray-200);
+  border-radius: 3px;
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.rgb-input input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: var(--shadow-sm);
+}
+
+.rgb-input input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: var(--shadow-sm);
+}
+
+.rgb-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: 14px;
+  color: var(--gray-700);
+  font-weight: 600;
 }
 
 .color-actions {
@@ -516,10 +562,15 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 英雄区域 */
+/* 英雄区域 - 修复显示问题 */
 .hero {
   padding: 80px 0;
-  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.05) 0%, rgba(var(--primary-dark-rgb), 0.05) 100%);
+  background: linear-gradient(135deg, 
+    rgba(var(--primary-rgb), 0.05) 0%, 
+    rgba(var(--primary-dark-rgb), 0.05) 30%, 
+    rgba(var(--primary-rgb), 0.02) 70%, 
+    rgba(var(--primary-dark-rgb), 0.02) 100%
+  );
   border-radius: var(--radius-xl);
   margin-bottom: 60px;
   text-align: center;
@@ -529,6 +580,7 @@ body {
   will-change: background;
 }
 
+/* 移除有问题的SVG背景，改用纯CSS渐变 */
 .hero::before {
   content: '';
   position: absolute;
@@ -536,8 +588,10 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(var(--primary-rgb), 0.03)"/></svg>');
-  background-size: cover;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(var(--primary-rgb), 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(var(--primary-dark-rgb), 0.03) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .hero-title {
@@ -549,6 +603,8 @@ body {
   background-clip: text;
   transition: all var(--transition-fast);
   will-change: background;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-subtitle {
@@ -557,6 +613,8 @@ body {
   max-width: 700px;
   margin: 0 auto 40px;
   line-height: 1.6;
+  position: relative;
+  z-index: 1;
 }
 
 /* 统计卡片 */
@@ -678,7 +736,7 @@ body {
   background-color: rgba(var(--primary-rgb), 0.03);
 }
 
-/* 联考试卷展开样式 */
+/* 联考试卷展开样式 - 添加丝滑动效 */
 .exam-row {
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -690,10 +748,37 @@ body {
 
 .exam-details {
   background: var(--gray-100);
+  overflow: hidden;
+  animation: examExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes examExpand {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .exam-details-content {
   padding: 20px;
+  animation: contentFadeIn 0.3s ease 0.1s both;
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .exam-subject {
@@ -706,12 +791,31 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   transition: all var(--transition-fast);
+  animation: subjectSlideIn 0.3s ease both;
+}
+
+@keyframes subjectSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .exam-subject:hover {
   transform: translateX(5px);
   box-shadow: var(--shadow-sm);
 }
+
+.exam-subject:nth-child(1) { animation-delay: 0.1s; }
+.exam-subject:nth-child(2) { animation-delay: 0.15s; }
+.exam-subject:nth-child(3) { animation-delay: 0.2s; }
+.exam-subject:nth-child(4) { animation-delay: 0.25s; }
+.exam-subject:nth-child(5) { animation-delay: 0.3s; }
+.exam-subject:nth-child(6) { animation-delay: 0.35s; }
 
 .exam-subject-name {
   font-weight: 600;
@@ -966,7 +1070,7 @@ body {
   gap: 12px;
 }
 
-/* 页脚 */
+/* 页脚 - 移除列表符号和下划线 */
 .footer {
   background: var(--footer-bg);
   color: white;
@@ -999,10 +1103,12 @@ body {
   transition: color var(--transition-fast);
   cursor: pointer;
   display: inline-block;
+  text-decoration: none;
 }
 
 .footer-link:hover {
   color: white;
+  text-decoration: none;
 }
 
 .footer-bottom {
@@ -1131,6 +1237,17 @@ body {
     width: 100%;
     margin-bottom: 5px;
   }
+  
+  .exam-subject {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .exam-subject .action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 </style>
 </head>
@@ -1192,19 +1309,37 @@ body {
             <div class="rgb-controls">
               <div class="rgb-input-group">
                 <div class="rgb-input">
-                  <label for="rgb-r">红色 (R)</label>
-                  <input type="range" id="rgb-r" min="0" max="255" value="16">
-                  <span id="rgb-r-value">16</span>
+                  <label>红色 (R)</label>
+                  <div class="rgb-input-row">
+                    <span style="min-width: 30px;">0</span>
+                    <div class="rgb-slider-container">
+                      <input type="range" id="rgb-r" min="0" max="255" value="16">
+                      <span class="rgb-value" id="rgb-r-value">16</span>
+                    </div>
+                    <span style="min-width: 30px;">255</span>
+                  </div>
                 </div>
                 <div class="rgb-input">
-                  <label for="rgb-g">绿色 (G)</label>
-                  <input type="range" id="rgb-g" min="0" max="255" value="185">
-                  <span id="rgb-g-value">185</span>
+                  <label>绿色 (G)</label>
+                  <div class="rgb-input-row">
+                    <span style="min-width: 30px;">0</span>
+                    <div class="rgb-slider-container">
+                      <input type="range" id="rgb-g" min="0" max="255" value="185">
+                      <span class="rgb-value" id="rgb-g-value">185</span>
+                    </div>
+                    <span style="min-width: 30px;">255</span>
+                  </div>
                 </div>
                 <div class="rgb-input">
-                  <label for="rgb-b">蓝色 (B)</label>
-                  <input type="range" id="rgb-b" min="0" max="255" value="129">
-                  <span id="rgb-b-value">129</span>
+                  <label>蓝色 (B)</label>
+                  <div class="rgb-input-row">
+                    <span style="min-width: 30px;">0</span>
+                    <div class="rgb-slider-container">
+                      <input type="range" id="rgb-b" min="0" max="255" value="129">
+                      <span class="rgb-value" id="rgb-b-value">129</span>
+                    </div>
+                    <span style="min-width: 30px;">255</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1878,6 +2013,20 @@ class FPaperApp {
         document.getElementById('rgb-g-value').textContent = rgb[1];
         document.getElementById('rgb-b-value').textContent = rgb[2];
       }
+    } else {
+      // 使用当前主题颜色
+      const theme = this.colorThemes[this.state.currentColor];
+      if (theme) {
+        const rgb = this.hexToRgb(theme.primary);
+        if (rgb) {
+          document.getElementById('rgb-r').value = rgb[0];
+          document.getElementById('rgb-g').value = rgb[1];
+          document.getElementById('rgb-b').value = rgb[2];
+          document.getElementById('rgb-r-value').textContent = rgb[0];
+          document.getElementById('rgb-g-value').textContent = rgb[1];
+          document.getElementById('rgb-b-value').textContent = rgb[2];
+        }
+      }
     }
     
     this.updateCustomColorPreview();
@@ -2199,11 +2348,11 @@ class FPaperApp {
     
     img.onload = () => {
       errorDiv.classList.add('d-none');
-      img.classList.remove('d-none');
+      img.style.display = 'block';
     };
     
     img.onerror = () => {
-      img.classList.add('d-none');
+      img.style.display = 'none';
       errorDiv.classList.remove('d-none');
     };
     
@@ -2315,7 +2464,20 @@ class FPaperApp {
   // 渲染最新联考
   renderRecentExams() {
     const container = document.getElementById('recent-papers-table');
-    if (!container || this.state.exams.length === 0) return;
+    if (!container) return;
+    
+    if (this.state.exams.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <h3 class="empty-state-title">暂无联考数据</h3>
+          <p class="empty-state-description">请确保data.txt和category.txt文件存在且格式正确。</p>
+        </div>
+      `;
+      return;
+    }
     
     const recentExams = [...this.state.exams]
       .sort((a, b) => b.year - a.year)
@@ -2367,9 +2529,9 @@ class FPaperApp {
                 <div style="display: grid; gap: 10px;">
         `;
         
-        exam.papers.forEach(paper => {
+        exam.papers.forEach((paper, index) => {
           html += `
-            <div class="exam-subject">
+            <div class="exam-subject" style="animation-delay: ${0.1 + index * 0.05}s">
               <div>
                 <div class="exam-subject-name">${paper.name}</div>
                 <div class="exam-subject-date">${paper.date} | ${paper.category}</div>
@@ -2503,7 +2665,7 @@ class FPaperApp {
       });
     } else {
       // 渲染联考列表
-      filteredData.forEach(exam => {
+      filteredData.forEach((exam, examIndex) => {
         const isExpanded = this.state.expandedExams.has(exam.id);
         
         html += `
@@ -2536,9 +2698,9 @@ class FPaperApp {
                   <div style="display: grid; gap: 10px;">
           `;
           
-          exam.papers.forEach(paper => {
+          exam.papers.forEach((paper, paperIndex) => {
             html += `
-              <div class="exam-subject">
+              <div class="exam-subject" style="animation-delay: ${0.1 + paperIndex * 0.05}s">
                 <div>
                   <div class="exam-subject-name">${paper.name}</div>
                   <div class="exam-subject-date">${paper.date} | ${paper.category}</div>
