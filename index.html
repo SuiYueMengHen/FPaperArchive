@@ -736,7 +736,7 @@ ul, ol {
   background-color: rgba(var(--primary-rgb), 0.03);
 }
 
-/* 联考试卷展开样式 - 添加丝滑动效 */
+/* 联考试卷展开样式 - 优化动画逻辑 */
 .exam-row {
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -746,10 +746,15 @@ ul, ol {
   background-color: rgba(var(--primary-rgb), 0.05) !important;
 }
 
+/* 已展开的联考详情 - 不需要动画 */
 .exam-details {
   background: var(--gray-100);
   overflow: hidden;
-  animation: examExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 新展开的联考详情 - 添加动画 */
+.exam-details.expanding {
+  animation: examExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes examExpand {
@@ -767,6 +772,10 @@ ul, ol {
 
 .exam-details-content {
   padding: 20px;
+}
+
+/* 新展开的内容 - 添加动画 */
+.exam-details-content.animating {
   animation: contentFadeIn 0.3s ease 0.1s both;
 }
 
@@ -791,6 +800,10 @@ ul, ol {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   transition: all var(--transition-fast);
+}
+
+/* 新展开的试卷项目 - 添加动画 */
+.exam-subject.animating {
   animation: subjectSlideIn 0.3s ease both;
 }
 
@@ -809,13 +822,6 @@ ul, ol {
   transform: translateX(5px);
   box-shadow: var(--shadow-sm);
 }
-
-.exam-subject:nth-child(1) { animation-delay: 0.1s; }
-.exam-subject:nth-child(2) { animation-delay: 0.15s; }
-.exam-subject:nth-child(3) { animation-delay: 0.2s; }
-.exam-subject:nth-child(4) { animation-delay: 0.25s; }
-.exam-subject:nth-child(5) { animation-delay: 0.3s; }
-.exam-subject:nth-child(6) { animation-delay: 0.35s; }
 
 .exam-subject-name {
   font-weight: 600;
@@ -928,7 +934,7 @@ ul, ol {
   color: var(--gray-900);
 }
 
-/* 提示框 */
+/* 提示框 - 优化样式 */
 .toast-container {
   position: fixed;
   top: 100px;
@@ -947,12 +953,12 @@ ul, ol {
   border-radius: var(--radius-md);
   padding: 16px 20px;
   box-shadow: var(--shadow-lg);
-  border-left: 4px solid var(--primary);
   animation: slideInFromRight 0.3s ease-out forwards;
   pointer-events: auto;
   margin-bottom: 10px;
   transition: all var(--transition-fast);
   will-change: transform, opacity;
+  border-left: 4px solid var(--primary); /* 动态颜色 */
 }
 
 .toast.fade-out {
@@ -969,6 +975,7 @@ ul, ol {
   to { opacity: 0; transform: translateX(100%); }
 }
 
+/* 不同类型的提示框 */
 .toast-success {
   border-left-color: var(--success);
 }
@@ -989,6 +996,42 @@ ul, ol {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* 优化关闭按钮样式 */
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-round);
+  transition: all var(--transition-fast);
+  margin-left: 8px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  background: var(--gray-100);
+  color: var(--danger);
+  transform: scale(1.1);
+}
+
+.toast-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 /* 模态框 */
@@ -1247,6 +1290,12 @@ ul, ol {
   .exam-subject .action-buttons {
     width: 100%;
     justify-content: flex-end;
+  }
+  
+  .toast-container {
+    max-width: calc(100% - 40px);
+    right: 10px;
+    left: 10px;
   }
 }
 </style>
@@ -1666,6 +1715,7 @@ class FPaperApp {
       currentColor: 'green',
       customColor: null,
       expandedExams: new Set(),
+      animatingExams: new Set(), // 正在动画的联考
       navHistory: ['home']
     };
     
@@ -1737,7 +1787,7 @@ class FPaperApp {
   }
   
   // 应用颜色主题
-  applyColorTheme(colorName, showTransition = true) {
+  applyColorTheme(colorName, showTransition = true, showToast = true) {
     const theme = this.colorThemes[colorName];
     if (!theme) return;
     
@@ -1747,15 +1797,23 @@ class FPaperApp {
     
     localStorage.setItem('fpaper-color', colorName);
     localStorage.removeItem('fpaper-custom-color');
+    
+    if (showToast) {
+      this.showToast(`已切换到${this.getColorName(colorName)}主题`, 'success');
+    }
   }
   
   // 应用自定义颜色
-  applyCustomColor(colorData, showTransition = true) {
+  applyCustomColor(colorData, showTransition = true, showToast = true) {
     this.applyColorValues(colorData.primary, colorData.primaryDark, showTransition);
     this.state.customColor = colorData;
     
     localStorage.setItem('fpaper-custom-color', JSON.stringify(colorData));
     localStorage.removeItem('fpaper-color');
+    
+    if (showToast) {
+      this.showToast('已应用自定义颜色', 'success');
+    }
   }
   
   // 应用颜色值
@@ -1778,6 +1836,35 @@ class FPaperApp {
     root.style.setProperty('--primary-rgb', primaryRGB.join(', '));
     root.style.setProperty('--primary-dark-rgb', primaryDarkRGB.join(', '));
     root.style.setProperty('--gradient-primary', `linear-gradient(135deg, ${primary} 0%, ${primaryDark} 100%)`);
+    
+    // 更新所有提示框的颜色
+    this.updateToastColors();
+  }
+  
+  // 更新所有提示框的颜色
+  updateToastColors() {
+    document.querySelectorAll('.toast').forEach(toast => {
+      // 移除旧的颜色类
+      toast.classList.remove('toast-success', 'toast-error', 'toast-info', 'toast-warning');
+      
+      // 根据内容添加新的颜色类
+      if (toast.querySelector('.fa-check-circle')) {
+        toast.classList.add('toast-success');
+        toast.style.borderLeftColor = 'var(--success)';
+      } else if (toast.querySelector('.fa-exclamation-circle')) {
+        toast.classList.add('toast-error');
+        toast.style.borderLeftColor = 'var(--danger)';
+      } else if (toast.querySelector('.fa-info-circle')) {
+        toast.classList.add('toast-info');
+        toast.style.borderLeftColor = 'var(--primary)';
+      } else if (toast.querySelector('.fa-exclamation-triangle')) {
+        toast.classList.add('toast-warning');
+        toast.style.borderLeftColor = 'var(--warning)';
+      } else {
+        toast.classList.add('toast-info');
+        toast.style.borderLeftColor = 'var(--primary)';
+      }
+    });
   }
   
   // 显示颜色切换动效
@@ -1908,8 +1995,7 @@ class FPaperApp {
       
       if (activeTab === 'preset') {
         const selectedColor = document.querySelector('.color-option.active').getAttribute('data-color');
-        this.applyColorTheme(selectedColor, true);
-        this.showToast(`已切换到${this.getColorName(selectedColor)}主题`, 'success');
+        this.applyColorTheme(selectedColor, true, true);
       } else {
         const r = parseInt(document.getElementById('rgb-r').value);
         const g = parseInt(document.getElementById('rgb-g').value);
@@ -1922,8 +2008,7 @@ class FPaperApp {
           Math.max(0, Math.floor(b * 0.8))
         );
         
-        this.applyCustomColor({ primary, primaryDark }, true);
-        this.showToast('已应用自定义颜色', 'success');
+        this.applyCustomColor({ primary, primaryDark }, true, true);
       }
       
       colorPickerMenu.classList.remove('show');
@@ -1931,8 +2016,7 @@ class FPaperApp {
     
     // 重置颜色
     document.getElementById('reset-color-btn').addEventListener('click', () => {
-      this.applyColorTheme('green', true);
-      this.showToast('已重置为默认颜色', 'info');
+      this.applyColorTheme('green', true, true);
       colorPickerMenu.classList.remove('show');
     });
     
@@ -2059,9 +2143,9 @@ class FPaperApp {
     
     // 重新应用颜色
     if (this.state.customColor) {
-      this.applyCustomColor(this.state.customColor, true);
+      this.applyCustomColor(this.state.customColor, true, false);
     } else {
-      this.applyColorTheme(this.state.currentColor, true);
+      this.applyColorTheme(this.state.currentColor, true, false);
     }
     
     this.updateThemeButtonIcon();
@@ -2080,8 +2164,8 @@ class FPaperApp {
     return names[color] || color;
   }
   
-  // 显示提示
-  showToast(message, type = 'info') {
+  // 显示提示 - 优化颜色适配
+  showToast(message, type = 'info', useCustomColor = false) {
     this.toastCounter++;
     const toastId = `toast-${this.toastCounter}`;
     
@@ -2096,13 +2180,29 @@ class FPaperApp {
       warning: 'fa-exclamation-triangle'
     }[type] || 'fa-info-circle';
     
+    // 设置边框颜色
+    let borderColor = 'var(--primary)';
+    if (type === 'success') borderColor = 'var(--success)';
+    if (type === 'error') borderColor = 'var(--danger)';
+    if (type === 'warning') borderColor = 'var(--warning)';
+    
+    // 如果是颜色切换通知，使用当前颜色
+    if (useCustomColor && type === 'info' && (message.includes('切换') || message.includes('应用'))) {
+      borderColor = 'var(--primary)';
+    }
+    
     toast.innerHTML = `
       <div class="toast-content">
-        <i class="fas ${iconClass}"></i>
-        <span>${message}</span>
-        <button class="toast-close" onclick="app.removeToast('${toastId}')">&times;</button>
+        <i class="fas ${iconClass} toast-icon"></i>
+        <div class="toast-message">${message}</div>
+        <button class="toast-close" onclick="app.removeToast('${toastId}')">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     `;
+    
+    // 设置动态边框颜色
+    toast.style.borderLeftColor = borderColor;
     
     document.querySelector('.toast-container').appendChild(toast);
     
@@ -2498,6 +2598,7 @@ class FPaperApp {
     
     recentExams.forEach(exam => {
       const isExpanded = this.state.expandedExams.has(exam.id);
+      const isAnimating = this.state.animatingExams.has(exam.id);
       
       html += `
         <tr class="exam-row" data-exam-id="${exam.id}">
@@ -2522,16 +2623,16 @@ class FPaperApp {
       
       if (isExpanded) {
         html += `
-          <tr class="exam-details" data-exam-id="${exam.id}">
+          <tr class="exam-details ${isAnimating ? 'expanding' : ''}" data-exam-id="${exam.id}">
             <td colspan="4">
-              <div class="exam-details-content">
+              <div class="exam-details-content ${isAnimating ? 'animating' : ''}">
                 <h4 style="margin-bottom: 15px;">${exam.name} 包含试卷</h4>
                 <div style="display: grid; gap: 10px;">
         `;
         
         exam.papers.forEach((paper, index) => {
           html += `
-            <div class="exam-subject" style="animation-delay: ${0.1 + index * 0.05}s">
+            <div class="exam-subject ${isAnimating ? 'animating' : ''}" style="${isAnimating ? `animation-delay: ${0.1 + index * 0.05}s` : ''}">
               <div>
                 <div class="exam-subject-name">${paper.name}</div>
                 <div class="exam-subject-date">${paper.date} | ${paper.category}</div>
@@ -2667,6 +2768,7 @@ class FPaperApp {
       // 渲染联考列表
       filteredData.forEach((exam, examIndex) => {
         const isExpanded = this.state.expandedExams.has(exam.id);
+        const isAnimating = this.state.animatingExams.has(exam.id);
         
         html += `
           <tr class="exam-row" data-exam-id="${exam.id}">
@@ -2691,16 +2793,16 @@ class FPaperApp {
         
         if (isExpanded) {
           html += `
-            <tr class="exam-details" data-exam-id="${exam.id}">
+            <tr class="exam-details ${isAnimating ? 'expanding' : ''}" data-exam-id="${exam.id}">
               <td colspan="4">
-                <div class="exam-details-content">
+                <div class="exam-details-content ${isAnimating ? 'animating' : ''}">
                   <h4 style="margin-bottom: 15px;">${exam.name} 包含试卷</h4>
                   <div style="display: grid; gap: 10px;">
           `;
           
           exam.papers.forEach((paper, paperIndex) => {
             html += `
-              <div class="exam-subject" style="animation-delay: ${0.1 + paperIndex * 0.05}s">
+              <div class="exam-subject ${isAnimating ? 'animating' : ''}" style="${isAnimating ? `animation-delay: ${0.1 + paperIndex * 0.05}s` : ''}">
                 <div>
                   <div class="exam-subject-name">${paper.name}</div>
                   <div class="exam-subject-date">${paper.date} | ${paper.category}</div>
@@ -2775,10 +2877,15 @@ class FPaperApp {
   
   // 切换联考展开状态
   toggleExamExpansion(examId) {
-    if (this.state.expandedExams.has(examId)) {
-      this.state.expandedExams.delete(examId);
-    } else {
+    const isExpanding = !this.state.expandedExams.has(examId);
+    
+    if (isExpanding) {
+      // 添加动画状态
+      this.state.animatingExams.add(examId);
       this.state.expandedExams.add(examId);
+    } else {
+      // 收起，移除状态
+      this.state.expandedExams.delete(examId);
     }
     
     // 重新渲染当前页面
@@ -2791,6 +2898,24 @@ class FPaperApp {
         document.getElementById('paper-year').value
       );
     }
+    
+    // 如果正在展开，动画结束后移除动画状态
+    if (isExpanding) {
+      setTimeout(() => {
+        this.state.animatingExams.delete(examId);
+        
+        // 重新渲染以移除动画类
+        if (this.state.currentPage === 'home') {
+          this.renderRecentExams();
+        } else {
+          this.renderExamsTable(
+            document.getElementById('paper-search').value,
+            document.getElementById('paper-category').value,
+            document.getElementById('paper-year').value
+          );
+        }
+      }, 500); // 动画持续时间 + 缓冲
+    }
   }
   
   // 搜索试卷
@@ -2799,6 +2924,7 @@ class FPaperApp {
     const category = document.getElementById('paper-category').value;
     const year = document.getElementById('paper-year').value;
     
+    this.state.animatingExams.clear(); // 清除所有动画状态
     this.renderExamsTable(searchTerm, category, year);
   }
   
@@ -2808,6 +2934,7 @@ class FPaperApp {
     document.getElementById('paper-category').value = '';
     document.getElementById('paper-year').value = '';
     this.state.expandedExams.clear();
+    this.state.animatingExams.clear();
     this.renderExamsTable();
   }
   
