@@ -1,0 +1,383 @@
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>FPaper Archive | 试卷资源管理系统</title>  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
+    <style>  
+        :root {  
+            --primary: #4f46e5;  
+            --primary-light: #818cf8;  
+            --bg: #f8fafc;  
+            --card: #ffffff;  
+            --text-main: #1e293b;  
+            --text-muted: #64748b;  
+            --border: #e2e8f0;  
+            --success: #10b981;  
+            --danger: #ef4444;  
+            --radius: 12px;  
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);  
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);  
+        }  
+  
+        [data-theme="dark"] {  
+            --bg: #0f172a;  
+            --card: #1e293b;  
+            --text-main: #f1f5f9;  
+            --text-muted: #94a3b8;  
+            --border: #334155;  
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);  
+        }  
+  
+        * { margin: 0; padding: 0; box-sizing: border-box; }  
+        body {   
+            font-family: 'Inter', -apple-system, sans-serif;   
+            background-color: var(--bg);   
+            color: var(--text-main);  
+            line-height: 1.6;  
+            transition: var(--transition);  
+        }  
+  
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }  
+  
+        /* Header Styles */  
+        header {  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
+            margin-bottom: 40px;  
+            animation: slideDown 0.6s ease;  
+        }  
+  
+        .logo h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }  
+          
+        .controls { display: flex; gap: 12px; }  
+  
+        /* Button Styles */  
+        .btn {  
+            padding: 10px 20px;  
+            border-radius: var(--radius);  
+            border: none;  
+            cursor: pointer;  
+            font-weight: 600;  
+            display: flex;  
+            align-items: center;  
+            gap: 8px;  
+            transition: var(--transition);  
+            font-size: 14px;  
+        }  
+        .btn-primary { background: var(--primary); color: white; }  
+        .btn-primary:hover { background: var(--primary-light); transform: translateY(-2px); }  
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }  
+        .btn-outline:hover { background: var(--border); }  
+        .btn-success { background: var(--success); color: white; }  
+  
+        /* Card Styles */  
+        .exam-card {  
+            background: var(--card);  
+            border: 1px solid var(--border);  
+            border-radius: var(--radius);  
+            padding: 24px;  
+            margin-bottom: 16px;  
+            box-shadow: var(--shadow);  
+            cursor: pointer;  
+            transition: var(--transition);  
+            position: relative;  
+            overflow: hidden;  
+            animation: fadeIn 0.5s ease backwards;  
+        }  
+        .exam-card:hover { transform: scale(1.01); border-color: var(--primary); }  
+        .exam-card h3 { font-size: 18px; margin-bottom: 8px; padding-right: 40px; }  
+        .exam-meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 15px; }  
+        .subject-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }  
+        .tag { background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }  
+  
+        /* Modal Styles */  
+        .modal-overlay {  
+            position: fixed;  
+            top: 0; left: 0; width: 100%; height: 100%;  
+            background: rgba(0,0,0,0.5);  
+            backdrop-filter: blur(4px);  
+            display: none;  
+            justify-content: center;  
+            align-items: center;  
+            z-index: 1000;  
+        }  
+        .modal {  
+            background: var(--card);  
+            width: 90%;  
+            max-width: 800px;  
+            max-height: 90vh;  
+            border-radius: var(--radius);  
+            padding: 30px;  
+            overflow-y: auto;  
+            box-shadow: var(--shadow);  
+            position: relative;  
+        }  
+        .modal-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }  
+        .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); }  
+  
+        /* Form Styles */  
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }  
+        .form-group { margin-bottom: 15px; }  
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }  
+        .form-group input {   
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);   
+            background: var(--bg); color: var(--text-main); outline: none; transition: var(--transition);  
+        }  
+        .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }  
+          
+        .subject-entry {  
+            border: 1px solid var(--border);  
+            padding: 15px;  
+            border-radius: 10px;  
+            margin-bottom: 10px;  
+            background: rgba(0,0,0,0.02);  
+        }  
+        .subject-entry-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 14px; border-bottom: 1px dashed var(--border); }  
+  
+        /* Animations */  
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }  
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }  
+  
+        /* Notification */  
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 8px; background: var(--success); color: white; display: none; z-index: 2000; box-shadow: var(--shadow); }  
+    </style>  
+</head>  
+<body>  
+  
+<div class="container">  
+    <header>  
+        <div class="logo">  
+            <h1>FPaper Archive</h1>  
+            <p style="color: var(--text-muted); font-size: 12px;">杭州市学军中学 & 联考试卷管理</p>  
+        </div>  
+        <div class="controls">  
+            <button class="btn btn-outline" onclick="toggleTheme()"><i class="fas fa-moon"></i></button>  
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> 新增联考</button>  
+            <button class="btn btn-success" onclick="exportData()"><i class="fas fa-download"></i> 下载 data.txt</button>  
+        </div>  
+    </header>  
+  
+    <div id="exam-list">  
+        <!-- 联考列表将在这里生成 -->  
+    </div>  
+</div>  
+  
+<!-- 编辑/新增 弹窗 -->  
+<div class="modal-overlay" id="modal-overlay">  
+    <div class="modal">  
+        <div class="modal-header">  
+            <h2 id="modal-title">录入联考数据</h2>  
+            <span class="close-modal" onclick="closeModal()">&times;</span>  
+        </div>  
+        <div class="form-group">  
+            <label>联考完整名称</label>  
+            <input type="text" id="exam-full-name" placeholder="例如：浙江省杭州市学军中学2026年1月首考适应性考试">  
+        </div>  
+          
+        <div style="margin: 20px 0; font-weight: bold; font-size: 14px; color: var(--text-muted);">科目卷列表 (10科)</div>  
+          
+        <div id="subjects-container">  
+            <!-- 10个科目输入框将在这里生成 -->  
+        </div>  
+  
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">  
+            <button class="btn btn-outline" onclick="closeModal()">取消</button>  
+            <button class="btn btn-primary" onclick="saveExam()">保存录入</button>  
+        </div>  
+    </div>  
+</div>  
+  
+<div class="toast" id="toast">操作成功！</div>  
+  
+<script>  
+    // 基础配置  
+    const CATEGORIES = {  
+        "1": "语文", "2": "数学", "3": "英语", "4": "物理", "5": "化学",  
+        "6": "技术", "7": "生物", "8": "政治", "9": "历史", "10": "地理"  
+    };  
+  
+    let examsData = [];  
+    let editingIndex = -1;  
+  
+    // 初始数据 (根据用户提供的内容进行预置)  
+    const initialRawData = `浙江省杭州市学军中学2026年1月首考适应性考试 [[[[[化学-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/i7tzK3ey4ari,1],[历史-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/iGfBJ3ey4aub,2],[地理-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/i9jDW3ey4ane,3],[政治-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/i4p493ey4beb,4],[物理-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/ipFDm3ey4b3a,5],[生物-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/iAYuH3ey4azg,6],[英语-浙江省杭州市学军中学2026年1月首考适应性考试,2025.12.31,https://heisenberg000.lanzoum.com/iCGsH3ey4bah,7]]]]]  
+广东省2025-2026学年高三上学期一轮复习验收考试 [[[[[化学-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/iAy2U3ey4b7e,1],[历史-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/iKa9Y3ey4bbi,2],[地理-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/idnHP3ey4b4b,3],[政治-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/iWGCP3ey4bli,4],[数学-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/ifiNS3ey4bcj,5],[物理-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/ieMv83ey4bfc,6],[英语-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/iO8rv3ey4bhe,7],[语文-广东省2025-2026学年高三上学期一轮复习验收考试,2025.12.31,https://heisenberg000.lanzoum.com/ik4C43ey4bjg,8]]]]]`;  
+  
+    // 初始化：解析数据并渲染  
+    window.onload = () => {  
+        parseData(initialRawData);  
+        renderExams();  
+        createSubjectInputs();  
+    };  
+  
+    function parseData(text) {  
+        examsData = [];  
+        const lines = text.split('\n').filter(l => l.trim());  
+        lines.forEach(line => {  
+            const parts = line.split(' [[[[[');  
+            const name = parts[0].trim();  
+            const papersStr = parts[1].replace(']]]]]', '');  
+              
+            const papers = papersStr.split('],[').map(p => {  
+                const pClean = p.replace('[', '').replace(']', '');  
+                const fields = pClean.split(',');  
+                return {  
+                    title: fields[0],  
+                    date: fields[1],  
+                    url: fields[2],  
+                    catId: fields[3]  
+                };  
+            });  
+            examsData.push({ name, papers });  
+        });  
+    }  
+  
+    function renderExams() {  
+        const list = document.getElementById('exam-list');  
+        list.innerHTML = '';  
+        examsData.forEach((exam, idx) => {  
+            const card = document.createElement('div');  
+            card.className = 'exam-card';  
+            card.style.animationDelay = `${idx * 0.1}s`;  
+            card.onclick = () => openEditModal(idx);  
+              
+            const subjects = exam.papers.map(p => CATEGORIES[p.catId] || '未知').join(' · ');  
+            const tagHtml = exam.papers.map(p => `<span class="tag">${CATEGORIES[p.catId]}</span>`).join('');  
+  
+            card.innerHTML = `  
+                <h3>${exam.name}</h3>  
+                <div class="exam-meta">  
+                    <span><i class="far fa-calendar-check"></i> ${exam.papers[0]?.date || 'N/A'}</span>  
+                    <span><i class="fas fa-file-invoice"></i> ${exam.papers.length} 份试卷</span>  
+                </div>  
+                <div class="subject-tags">${tagHtml}</div>  
+            `;  
+            list.appendChild(card);  
+        });  
+    }  
+  
+    function createSubjectInputs() {  
+        const container = document.getElementById('subjects-container');  
+        container.innerHTML = '';  
+        Object.entries(CATEGORIES).forEach(([id, name]) => {  
+            const div = document.createElement('div');  
+            div.className = 'subject-entry';  
+            div.innerHTML = `  
+                <div class="subject-entry-title">${id}. ${name}</div>  
+                <div class="form-grid">  
+                    <div class="form-group">  
+                        <label>试卷日期</label>  
+                        <input type="text" id="date-${id}" placeholder="2025.12.31">  
+                    </div>  
+                    <div class="form-group">  
+                        <label>网盘链接</label>  
+                        <input type="text" id="url-${id}" placeholder="https://...">  
+                    </div>  
+                </div>  
+            `;  
+            container.appendChild(div);  
+        });  
+    }  
+  
+    // 弹窗控制  
+    function openAddModal() {  
+        editingIndex = -1;  
+        document.getElementById('modal-title').innerText = "新增联考录入";  
+        document.getElementById('exam-full-name').value = "";  
+        clearModalInputs();  
+        document.getElementById('modal-overlay').style.display = 'flex';  
+    }  
+  
+    function openEditModal(index) {  
+        editingIndex = index;  
+        const exam = examsData[index];  
+        document.getElementById('modal-title').innerText = "编辑联考数据";  
+        document.getElementById('exam-full-name').value = exam.name;  
+        clearModalInputs();  
+          
+        exam.papers.forEach(p => {  
+            if(document.getElementById(`date-${p.catId}`)) {  
+                document.getElementById(`date-${p.catId}`).value = p.date;  
+                document.getElementById(`url-${p.catId}`).value = p.url;  
+            }  
+        });  
+        document.getElementById('modal-overlay').style.display = 'flex';  
+    }  
+  
+    function closeModal() {  
+        document.getElementById('modal-overlay').style.display = 'none';  
+    }  
+  
+    function clearModalInputs() {  
+        Object.keys(CATEGORIES).forEach(id => {  
+            document.getElementById(`date-${id}`).value = "";  
+            document.getElementById(`url-${id}`).value = "";  
+        });  
+    }  
+  
+    function saveExam() {  
+        const name = document.getElementById('exam-full-name').value.trim();  
+        if(!name) return alert("请输入联考名称");  
+  
+        const papers = [];  
+        Object.entries(CATEGORIES).forEach(([id, catName]) => {  
+            const date = document.getElementById(`date-${id}`).value.trim();  
+            const url = document.getElementById(`url-${id}`).value.trim();  
+              
+            if(url) { // 只有填写了URL才视作有此试卷  
+                papers.push({  
+                    title: `${catName}-${name}`,  
+                    date: date || "2025.12.31",  
+                    url: url,  
+                    catId: id  
+                });  
+            }  
+        });  
+  
+        if(editingIndex > -1) {  
+            examsData[editingIndex] = { name, papers };  
+        } else {  
+            examsData.unshift({ name, papers });  
+        }  
+  
+        renderExams();  
+        closeModal();  
+        showToast("数据已更新至内存");  
+    }  
+  
+    function exportData() {  
+        let output = "";  
+        examsData.forEach(exam => {  
+            const papersStr = exam.papers.map(p => `[${p.title},${p.date},${p.url},${p.catId}]`).join(',');  
+            output += `${exam.name} [[[[[${papersStr}]]]]]\n`;  
+        });  
+  
+        const blob = new Blob([output], { type: 'text/plain' });  
+        const a = document.createElement('a');  
+        a.href = URL.createObjectURL(blob);  
+        a.download = 'data.txt';  
+        a.click();  
+        showToast("data.txt 已开始下载");  
+    }  
+  
+    function toggleTheme() {  
+        const body = document.body;  
+        const isDark = body.getAttribute('data-theme') === 'dark';  
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');  
+        const icon = document.querySelector('.btn-outline i');  
+        icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';  
+    }  
+  
+    function showToast(msg) {  
+        const t = document.getElementById('toast');  
+        t.innerText = msg;  
+        t.style.display = 'block';  
+        setTimeout(() => t.style.display = 'none', 3000);  
+    }  
+</script>  
+  
+</body>  
+</html>  
